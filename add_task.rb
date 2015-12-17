@@ -78,7 +78,7 @@ def update_task(t_id, title, e_day, e_time, tasktime, about, category, star)
   db.execute('update task set importance =?  where id=?', star, t_id)
   db.close
   print '<html>'
-  print '<head><META http-equiv="refresh"; content="0; URL=index.rb"></head><body></body></html>'
+  print '<head><META http-equiv="refresh"; content="0; URL="index.rb"></head><body></body></html>'
 end
 
 def add_task(title, e_day, e_time, tasktime, about, category, star)
@@ -113,14 +113,14 @@ def new_category_view(t_id, title, e_day, e_time, tasktime, star, _about)
   print_t('in_task1.txt')
   print " <div align=\"center\"><p>タスク入力</p></div> \n"
   print "<br><br><div id = \"main\" style=\"float:left;\"> \n"
-  print "<form action=\"/cgi-bin/cal/add_task.rb\" method=\"post\">\n "
+  print "<form action=\"add_task.rb\" method=\"post\">\n "
   if t_id != ''
     print "<input type=\"hidden\" name=\"t_id\" value=\""
     print t_id
     print "\">"
   end
   print '  <label>件名：</label> '
-  print "  <input type=\"text\" name=\"title\" size=\"20\" value=\""
+  print "  <input type=\"text\" name=\"title\"  style=\"width: 60%; height: 1.5em;\" value=\""
   print title
   print "\">"
   print '  <br><label>締切：</label> '
@@ -135,21 +135,21 @@ def new_category_view(t_id, title, e_day, e_time, tasktime, star, _about)
   print tasktime
   print "\"><p>\n"
   print '<label>カテゴリ：</label>'
-  print "  <input type=\"text\" name=\"category\" size=\"20\" value=\"新規カテゴリ名\"><br>\n "
+  print "  <input type=\"text\" name=\"category\"  style=\"width: 60%; height: 1.5em;\" value=\"新規カテゴリ名\"><br>\n "
   print "<div class=\"hoge\">"
   print '<ul>'
   print "<li><input type=\"radio\" name=\"importance\" value=\"1\""
   print " checked=\"checked\"" if star == '1'
-  print '><br>1</li>'
+  print '><br>★・・</li>'
   print "<li><input type=\"radio\" name=\"importance\" value=\"2\""
   print " checked=\"checked\"" if star == '2'
-  print '><br>2</li>'
+  print '><br>★★・</li>'
   print "<li><input type=\"radio\" name=\"importance\" value=\"3\""
   print " checked=\"checked\"" if star == '3'
-  print '><br>3</li>'
+  print '><br>★★★</li>'
   print '</ul></div>'
   print '  <label>内容：</label>'
-  print "  <input type=\"text\" name=\"about\" size=\"20\" value=\"about\"><br>\n"
+  print "  <input type=\"text\" name=\"about\" style=\"width: 60%; height: 2.5em;\" value=\"about\"><br>\n"
   print "    <input type=\"submit\" value=\"送信\"  onclick=\"window.close()\" class=\"btn\">\n"
   print '</p></form></div>'
   print_t('in_task3.txt')

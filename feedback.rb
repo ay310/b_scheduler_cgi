@@ -5,6 +5,7 @@ require 'cgi'
 require 'kconv'
 print "Content-type: text/html\n\n"
 d = Time.now
+
 def to_min(time)
   if time == "00:00"
     return 0
@@ -208,13 +209,31 @@ def total_tasktime(sd, ed)
   s_num=@num_i
   decide_e_schedule(ed)
   e_num=@num_i
-  tasktime="0"
+  tasktime=0
   for i in s_num..e_num
     if @st[i]!="s"
       tasktime=tasktime.to_i+(to_min(@e_time[i]).to_i-to_min(@s_time[i]).to_i)
     end
   end
   return to_h(tasktime)
+end
+
+def total_scheduletime(sd, ed)
+  decide_s_schedule(sd)
+  s_num=@num_i
+  decide_e_schedule(ed)
+  e_num=@num_i
+  stime=0
+  for i in s_num..e_num
+    if @st[i]=="s"
+      if @e_time[i].to_i-@s_time[i].to_i>0
+        stime=stime.to_i+(to_min(@e_time[i]).to_i-to_min(@s_time[i]).to_i)
+      elsif nextday(@s_day[i].to_s)==@e_day[i].to_s
+        stime=stime.to_i+(1440-to_min(@s_time[i]).to_i)+to_min(@e_time[i]).to_i
+      end
+    end
+  end
+  return to_h(stime)
 end
 
 def category_tasktime(sd, ed, c_name)
@@ -260,29 +279,73 @@ read_schedule
 printf("<html>")
 printf("<head>")
 printf("<title>feedback</title>")
-printf("<link rel=\"shortcut icon\" href=\"http://mima.c.fun.ac.jp/1012151/img/favicon.ico\" /></head>")
+printf("<script src=\"http://mima.c.fun.ac.jp/1012151/js/Chart.js\"></script>\n")
+printf("<link rel='stylesheet' type='text/css'  href=\"http://mima.c.fun.ac.jp/1012151/css/feedback.css\" />\n")
+printf("<link rel=\"shortcut icon\" href=\"http://mima.c.fun.ac.jp/1012151/img/favicon.ico\" /></head>\n")
 printf("<body>")
-printf("<h1>%s〜%sのフィードバック</h1>\n",startday, endday)
-printf("<table>")
+printf("<div id=\"layout\"><div id=\"content\">\n")
+printf("<h1 id=\"h01\"> %s - %s</h1>\n",startday, endday)
 printf("<p>今週のまとめの文章を表示</p>\n")
 
-printf("<h2>総タスク作業時刻</h2>\n")
+printf("<h2 id=\"h02\"> 総タスク作業時刻</h2>\n")
+t_time=total_tasktime(startday, endday)
+s_time=total_scheduletime(startday, endday)
+n_time=8640-to_min(t_time).to_i-to_min(s_time).to_i
 printf("<p>%s</p>\n",total_tasktime(startday, endday))
+printf("<canvas id=\"tasktime\" height=\"200\" width=\"200\"></canvas>\n")
+printf("<h2 id=\"h02\"> カテゴリ別作業時刻</h2><br>\n")
+printf("<canvas id=\"chart_category\" height=\"200\" width=\"200\"></canvas>\n")
 
-printf("<h2>カテゴリ別作業時刻</h2>\n")
+printf("<script type=\"text/javascript\">\n")
+printf("var taskData = [\n")
+printf("  {\n")
+printf("value: %s,\n",to_min(t_time))
+printf("color:\"#%s\",\n",rand(0x1000000).to_s(16).rjust(6, '0'))
+printf("  highlight: \"#%s\",\n",rand(0x1000000).to_s(16).rjust(6, '0'))
+printf("label: \"%s\"\n","タスク作業時刻")
+printf("  },\n")
+printf("  {\n")
+printf("value: %s,\n",to_min(s_time))
+printf("color:\"#%s\",\n",rand(0x1000000).to_s(16).rjust(6, '0'))
+printf("  highlight: \"#%s\",\n",rand(0x1000000).to_s(16).rjust(6, '0'))
+printf("label: \"%s\"\n","スケジュール時刻")
+printf("  },\n")
+printf("  {\n")
+printf("value: %s,\n",n_time)
+printf("color:\"#%s\",\n",rand(0x1000000).to_s(16).rjust(6, '0'))
+printf("  highlight: \"#%s\",\n",rand(0x1000000).to_s(16).rjust(6, '0'))
+printf("label: \"%s\"\n","余暇")
+printf("  }];\n")
+
+j=0
+printf("var categoryData = [\n")
 for i in 0..@c_num.to_i
   c_time=category_tasktime(startday, endday, @c_name[i])
   if c_time!="00:00"
-    printf("<p>%s：%s</p>\n",@c_name[i], c_time)
+    printf(",") if j!=0
+    printf("  {\n")
+    printf("value: %s,\n",to_min(c_time))
+    printf("color:\"#%s\",\n",rand(0x1000000).to_s(16).rjust(6, '0'))
+    printf("  highlight: \"#%s\",\n",rand(0x1000000).to_s(16).rjust(6, '0'))
+    printf("label: \"%s\"\n",@c_name[i])
+    printf("  }\n")
+    j=j+1
   end
 end
-
-printf("<h2>タスク別進捗状況</h2>\n")
+printf("];\n")
+printf("   window.onload = function(){\n")
+printf("      var ctx = document.getElementById(\"chart_category\").getContext(\"2d\");\n")
+printf("      window.myPie = new Chart(ctx).Pie(categoryData);\n")
+printf("      var ctx = document.getElementById(\"tasktime\").getContext(\"2d\");\n")
+printf("      window.myPie = new Chart(ctx).Pie(taskData);\n")
+printf("   };\n</script><br>\n")
+printf("<br><h2 id=\"h02\"> タスク別進捗状況</h2>\n")
 for i in 0..@t_num.to_i-1
   t_time=task_proportion(i)
+
   printf("<p>%s：%s</p>\n",@t_title[i], t_time)
 end
 
-printf("<h2>今週重点を置くべきこと</2>\n")
-printf("</table>")
-printf("</body>")
+printf("<h2 id=\"h02\"> 今週重点を置くべきこと</2>\n")
+printf("</div></div>")
+printf("</body></html>")
